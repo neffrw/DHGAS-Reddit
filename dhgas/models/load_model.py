@@ -1,3 +1,4 @@
+from .LSTM import LSTM
 from .GCN import GCN
 from .GAT import GAT
 from .RGCN import RGCN
@@ -32,6 +33,9 @@ def load_pre_post(args, dataset):
 
         featemb = None
         nclf_linear = NodePredictor(n_inp=8, n_classes=1)
+    elif args.dataset == "Reddit-troll":
+        featemb = None
+        nclf_linear = nn.Linear(args.hid_dim, args.num_classes)
     else:
         raise NotImplementedError(f"Unknown dataset {args.dataset}")
     return featemb, nclf_linear
@@ -50,7 +54,19 @@ def load_backbone(args, dataset, featemb, nclf_linear):
     )
     dhconfig = args.dhconfig
     model = args.model
-    if model == "GCN":
+    if model == "LSTM":
+        from .LSTM import LSTM as Net
+
+        model = Net(
+            in_dim=in_dim,
+            hid_dim=hid_dim,
+            num_layers=n_layers,
+            metadata=metadata,
+            predict_type=predict_type,
+            featemb=featemb,
+            nclf_linear=nclf_linear,
+        )
+    elif model == "GCN":
         from .GCN import GCN as Net
 
         model = Net(
@@ -309,7 +325,7 @@ def load_lazy_hetero_weights(args, dataset, model):
     with torch.no_grad():  # Initialize lazy modules.
         if args.dataset in "Aminer Ecomm".split():
             out = model.encode(dataset.val_dataset[0])
-        elif args.dataset in "Yelp-nc".split():
+        elif args.dataset in "Yelp-nc Reddit-troll".split():
             out = model.encode(dataset.val_dataset[0][0])
         elif args.dataset in "covid ".split():
             out = model.encode(dataset.val_dataset[0][0])

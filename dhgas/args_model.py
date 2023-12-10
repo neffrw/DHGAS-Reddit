@@ -42,7 +42,7 @@ def get_args(args=None):
     args = parser.parse_args(args)
 
     # post
-    args.device = f"cuda:{args.device}"
+    args.device = f"cuda:{args.device}" if args.device != "cpu" else "cpu"
     args.dynamic = args.model not in Sta_MODEL
     args.homo = args.model in Homo_MODEL
     args.test_full = not args.dynamic  # static model use full training data for testing

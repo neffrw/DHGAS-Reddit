@@ -7,12 +7,12 @@ import torch.nn.functional as F
 def load_trainer(args):
     if args.dataset in "Aminer Ecomm".split():
         from .lpred import train_till_end as trainer
-    elif args.dataset in "Yelp-nc".split():
+    elif args.dataset in "Yelp-nc Reddit-troll".split():
         from .nclf import train_till_end as trainer
     elif args.dataset in "covid ".split():
         from .nreg import train_till_end as trainer
 
-    if args.dataset in "Aminer Ecomm".split():
+    if args.dataset in "Aminer Ecomm Reddit-troll".split():
         criterion = torch.nn.BCEWithLogitsLoss()
     elif args.dataset in "Yelp-nc".split():
         criterion = F.cross_entropy
@@ -24,7 +24,7 @@ def load_trainer(args):
 def load_train_test(args):
     if args.dataset in "Aminer Ecomm".split():
         from .lpred import train, test
-    elif args.dataset in "Yelp-nc".split():
+    elif args.dataset in "Yelp-nc Reddit-troll".split():
         from .nclf import train, test
     elif args.dataset in "covid ".split():
         from .nreg import train, test

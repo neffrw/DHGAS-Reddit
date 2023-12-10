@@ -41,7 +41,11 @@ def test(model, data, device="cpu"):
         mask = query.mask
         target = query.y[mask]
         pred = out[mask]
-        pred = pred.argmax(dim=-1)
+        # pred = pred.argmax(dim=-1)
+        pred = pred.sigmoid()
+        # Set to 1 if > 0.5
+        pred[pred > 0.5] = 1
+        pred[pred <= 0.5] = 0
         acc = f1_score(target.cpu().numpy(), pred.cpu().numpy(), average="macro")
         # acc = (pred == target).sum() / mask.sum()
         # acc = float(acc)
@@ -70,6 +74,9 @@ def train_till_end(
     setup_seed(args.seed)
     start_time = time.time()
     best_val_auc = final_test_auc = 0
+    train_aucs = []
+    val_aucs = []
+    test_aucs = []
     earlystop = EarlyStopping(mode="max", patience=patience)
     with tqdm(range(max_epochs), disable=disable_progress) as bar:
         for epoch in bar:
@@ -85,6 +92,9 @@ def train_till_end(
             val_auc = test(model, dataset.val_dataset, device=device)
             ts = time.time()
             test_auc = test(model, dataset.test_dataset, device=device)
+            train_aucs.append(train_auc)
+            val_aucs.append(val_auc)
+            test_aucs.append(test_auc)
             # print('test ',(time.time()-ts)/len(dataset.test_dataset))
             if val_auc > best_val_auc:
                 best_val_auc = val_auc
@@ -108,6 +118,9 @@ def train_till_end(
         "test_auc": final_test_auc,
         "val_auc": best_val_auc,
         "train_auc": train_auc,
+        "train_aucs": train_aucs,
+        "val_aucs": val_aucs,
+        "test_aucs": test_aucs,
         "epoch": epoch,
         "time": time.time() - start_time,
         "time_per_epoch": (time.time() - start_time) / (epoch + 1),

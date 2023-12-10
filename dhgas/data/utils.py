@@ -31,6 +31,26 @@ def setorderidx(data):
     data = np.vectorize(int)(data)
     return data
 
+def setorderidxmapping(data):
+    """map col idx to ordered idx starting from 0
+    @params data: numpy array , rows as samples, columns as attributes
+    @return data: numpy array
+    """
+    data = data.copy()
+    row, col = data.shape
+    cnt = {}
+    for i in range(col):
+        cnt[i] = Counter(data[:, i])
+        k = list(cnt[i].keys())
+        k.sort()
+        k2i = dict(zip(k, range(len(k))))
+        # print(f'mapping col {i} head 50')
+        # print(list(k2i.items())[:50])
+        for j in range(row):
+            data[j][i] = k2i[data[j][i]]
+    data = np.vectorize(int)(data)
+    return data, k2i
+
 
 # @timeit
 def time_select_edge_time(dataset, t):
@@ -77,6 +97,7 @@ def time_merge_edge_time(datalist):
 
 
 from dhgas.utils import timeit
+from tqdm import tqdm
 
 # @timeit
 def linksplit(data, all_neg=False, inplace=False):
@@ -465,3 +486,25 @@ def make_hodata(x_dict, e_dict, predict_type):
     x = hodata.x
     e = hodata.edge_index
     return x, e, mask, hodata
+
+# @timeit
+def make_sequences(x_dict, e_dict, predict_type):
+    # Only keep the nodes of the predict_type
+    x = x_dict[predict_type]
+    x_seq = []
+    for etype, e in e_dict.items():
+        if etype[0] == predict_type:
+            dst_tensor = x_dict[etype[2]]
+            # sort edges by src
+            e = e[:, e[0].argsort()]
+            src_bounds = torch.unique(e[0], return_counts=True)[1]
+            src_bounds = torch.cat([torch.tensor([0], device=src_bounds.device), src_bounds.cumsum(dim=0)])
+            # for each src, get the dsts
+            for i in tqdm(range(len(src_bounds) - 1), desc="Processing nodes", disable=True):
+                dsts = e[1][src_bounds[i] : src_bounds[i + 1]]
+                x_seq.append(dst_tensor[dsts])
+            # for src, dst in tqdm(e.T, desc="Processing nodes"):
+            #     x_seq[src].append(dst_tensor[dst])
+    # x_seq = [torch.stack(x) for x in x_seq]
+    # x_seq = torch.nn.utils.rnn.pack_sequence(x_seq, enforce_sorted=False)
+    return x_seq

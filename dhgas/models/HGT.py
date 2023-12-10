@@ -9,7 +9,7 @@ from torch_geometric.nn import Linear
 
 
 class RelTemporalEncoding(nn.Module):
-    def __init__(self, n_hid, max_len=240, dropout=0.2):
+    def __init__(self, n_hid, max_len=2442, dropout=0.2):
         super(RelTemporalEncoding, self).__init__()
         position = torch.arange(0.0, max_len).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, n_hid, 2) * -(math.log(10000.0) / n_hid))
